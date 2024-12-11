@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travelcircus</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+    <h1>Travelcircus</h1>
+</header>
+
+<div class="container">
+    <div class="booking-block">
+        <button id="travel-group-button">
+            Travel Group
+            <span id="group-summary">2 adults, 0 children</span>
+        </button>
+        <div class="travel-group-popup" id="travel-group-popup">
+            <div class="travel-group-controls">
+                <span>Adults</span>
+                <button id="adults-decrease">-</button>
+                <span id="adults-count">2</span>
+                <button id="adults-increase">+</button>
+            </div>
+            <div class="travel-group-controls">
+                <span>Children</span>
+                <button id="children-decrease">-</button>
+                <span id="children-count">0</span>
+                <button id="children-increase">+</button>
+            </div>
+            <button class="confirm-button" id="confirm-travel-group">Confirm</button>
+        </div>
+        <div class="date-button-container">
+            <button class="date-button arrival-button" id="arrival-date-button">Arrival Date</button>
+            <button class="date-button departure-button" id="departure-date-button">Departure Date</button>
+        </div>
+        <button id="show-availability" class="confirm-button">Show Availability</button>
+    </div>
+</div>
+
+<div class="overlay" id="overlay"></div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
