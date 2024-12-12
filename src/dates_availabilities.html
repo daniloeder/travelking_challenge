@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dates Availability</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.1);
+            z-index: 999;
+        }
+
+        .modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            width: 90%;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-x {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 30px;
+            cursor: pointer;
+        }
+
+        .modal-title {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .calendar {
+            display: flex;
+            justify-content: space-around;
+            gap: 20px;
+        }
+
+        .month {
+            width: 390px;
+        }
+
+        .month h3 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        th,
+        td {
+            text-align: center;
+            width: 50px;
+            height: 50px;
+            line-height: 50px;
+            border-radius: 50%;
+            font-size: 13px;
+            overflow: hidden;
+        }
+
+        th {
+            background-color: transparent;
+        }
+
+        td {
+            font-size: 13px;
+            line-height: 13px;
+            font-weight: bold;
+            position: relative;
+            overflow: hidden;
+        }
+
+        td.filled {
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        td.green {
+            background-color: #cbebd9;
+        }
+
+        td.yellow {
+            background-color: #fae9b7;
+        }
+
+        td.orange {
+            background-color: #fad6b7;
+        }
+
+        td.unavailable {
+            cursor: default;
+            background-color: transparent;
+            color: #888;
+        }
+
+        .price {
+            font-size: 13px;
+            line-height: 13px;
+            color: #606060;
+            margin-top: 3px;
+            display: block;
+        }
+
+        td.hover-range {
+            background-color: #f7f3ed;
+            border-radius: 0;
+        }
+
+        td.hover-range .price {
+            color: #0cae9f;
+        }
+
+        td.unavailable .price {
+            color: #BBB;
+        }
+
+        td.hovered {
+            background-color: #f7f3ed;
+            border-radius: 0 30px 30px 0;
+        }
+
+        td.selected {
+            background-color: #000;
+            color: white;
+        }
+
+        td.day_from {
+            border-radius: 30px 0 0 30px;
+        }
+
+        td.day_to {
+            border-radius: 0 30px 30px 0;
+        }
+
+        td.selected .price {
+            color: white;
+        }
+
+        td.past {
+            color: #888;
+            font-style: italic;
+        }
+
+        td.not-filled {
+            color: #888;
+            font-style: italic;
+        }
+
+        .calendar-navigation {
+            position: absolute;
+            width: 100%;
+        }
+
+        #prev-button,
+        #next-button {
+            position: absolute;
+            background-color: #ddd;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 1.2em;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #prev-button {
+            left: 1%;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        #next-button {
+            right: 1%;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        #prev-button:disabled,
+        #next-button:disabled {
+            display: none;
+        }
+
+        .price-legend {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        .price-legend span {
+            display: flex;
+            align-items: center;
+            margin-right: 20px;
+        }
+
+        .price-dot {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .dot-low {
+            background-color: #cbebd9;
+        }
+
+        .dot-medium {
+            background-color: #fae9b7;
+        }
+
+        .dot-high {
+            background-color: #fad6b7;
+        }
+
+        .summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+
+        .summary-text {
+            min-width: 50%;
+            font-size: 20px;
+            color: #333;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .dates {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .day_from,
+        .day_to {
+            font-weight: bold;
+            color: #2d2d2d;
+        }
+
+        .arrow {
+            font-size: 28px;
+            color: #888;
+            margin-top: -8px;
+        }
+
+        .people {
+            font-size: 14px;
+            color: #666;
+            text-align: center;
+        }
+
+        .prices {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .price-person {
+            font-size: 16px;
+            font-weight: bold;
+            color: #0cae9f;
+        }
+
+        .total {
+            font-size: 18px;
+            font-weight: bold;
+            color: #999;
+        }
+
+        .price,
+        .total {
+            text-align: center;
+        }
+
+        .summary-button {
+            padding: 12px 20px;
+            background-color: #010e0c;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            margin-top: 15px;
+        }
+
+        .summary-button:hover {
+            background-color: #097f6f;
+            transform: translateY(-2px);
+        }
+
+        .summary-button:active {
+            background-color: #05443d;
+            transform: translateY(1px);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="modal-overlay" id="modal-overlay"></div>
+
+    <div class="modal" id="dates-modal">
+        <button id="close-modal" onclick="document.getElementById('dates-modal').style.display = 'none'"
+            class="close-x">&times;</button>
+
+        <h2 class="modal-title">Choose your hotel stay</h2>
+
+        <div class="calendar">
+            <button id="prev-button" class="nav-button" disabled>&lt;</button>
+            <div class="month" id="month1">
+                <h3 id="month1-title">January 2025</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mon</th>
+                            <th>Tue</th>
+                            <th>Wed</th>
+                            <th>Thu</th>
+                            <th>Fri</th>
+                            <th>Sat</th>
+                            <th>Sun</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="month" id="month2">
+                <h3 id="month2-title">February 2025</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mon</th>
+                            <th>Tue</th>
+                            <th>Wed</th>
+                            <th>Thu</th>
+                            <th>Fri</th>
+                            <th>Sat</th>
+                            <th>Sun</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <button id="next-button" class="nav-button">&gt;</button>
+        </div>
+
+        <div class="price-legend">
+            <span><span class="price-dot dot-low"></span>€ Low</span>
+            <span><span class="price-dot dot-medium"></span>€€ Medium</span>
+            <span><span class="price-dot dot-high"></span>€€€ High</span>
+        </div>
+
+        <div class="summary">
+            <div class="summary-text">
+                <div class="dates">
+                    <span class="final_day_from">Today</span>
+                    <span class="arrow">→</span>
+                    <span class="final_day_to">Tomorrow</span>
+                </div>
+                <div class="people">
+                    <span class="nights">0 adults</span>
+                </div>
+                <div class="prices">
+                    <span class="price-person">0 € per person</span>
+                    <span class="total">Total: 0.00 €</span>
+                </div>
+            </div>
+            <button class="summary-button">Confirm 8 nights</button>
+        </div>
+    </div>
+
+    <script>
+        const monthNames = [
+            "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"
+        ];
+
+        let currentMonth1 = 0;
+        let currentYear1 = 2025;
+
+        let dayFrom = null;
+        let dayTo = null;
+        let persons = 2;
+        let pricePerPerson = 0;
+        
+        async function fetchData() {
+            const url = "https://api.travelcircus.net/hotels/15823/checkins?E&party=%7B%22adults%22:2,%22children%22:%5B%5D%7D&domain=de&date_start=2025-01-01&date_end=2025-06-31";
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data._embedded?.hotel_availabilities) {
+                    return data._embedded.hotel_availabilities;
+                } else {
+                    console.error("No availability data found.");
+                    return [];
+                }
+            } catch (error) {
+                console.error("Error fetching date data:", error);
+                return [];
+            }
+        }
+
+        async function initCalendar() {
+            const dateData = await fetchData();
+
+            const month1TableBody = document.querySelector('#month1 tbody');
+            const month2TableBody = document.querySelector('#month2 tbody');
+
+            updateCalendar(currentMonth1, currentYear1, month1TableBody, month2TableBody, dateData);
+        }
+
+        function updateCalendar(month1, year1, tableBody1, tableBody2, dateData) {
+            const month2 = (month1 + 1) % 12;
+            const year2 = month1 === 11 ? year1 + 1 : year1;
+
+            const title1 = `${monthNames[month1]} ${year1}`;
+            const title2 = `${monthNames[month2]} ${year2}`;
+
+            document.getElementById('month1-title').textContent = title1;
+            document.getElementById('month2-title').textContent = title2;
+
+            tableBody1.innerHTML = '';
+            tableBody2.innerHTML = '';
+
+            generateCalendar(month1, year1, tableBody1, dateData);
+            generateCalendar(month2, year2, tableBody2, dateData);
+
+            toggleNavigationButtons(month1, year1);
+        }
+
+        function toggleNavigationButtons(month, year) {
+            const now = new Date();
+            const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
+
+            document.getElementById('prev-button').disabled = isCurrentMonth;
+        }
+
+        document.getElementById('prev-button').addEventListener('click', async () => {
+            if (currentMonth1 === 0) {
+                currentMonth1 = 11;
+                currentYear1 -= 1;
+            } else {
+                currentMonth1 -= 1;
+            }
+
+            const dateData = await fetchData();
+            const month1TableBody = document.querySelector('#month1 tbody');
+            const month2TableBody = document.querySelector('#month2 tbody');
+            updateCalendar(currentMonth1, currentYear1, month1TableBody, month2TableBody, dateData);
+        });
+
+        document.getElementById('next-button').addEventListener('click', async () => {
+            if (currentMonth1 === 11) {
+                currentMonth1 = 0;
+                currentYear1 += 1;
+            } else {
+                currentMonth1 += 1;
+            }
+
+            const dateData = await fetchData();
+            const month1TableBody = document.querySelector('#month1 tbody');
+            const month2TableBody = document.querySelector('#month2 tbody');
+            updateCalendar(currentMonth1, currentYear1, month1TableBody, month2TableBody, dateData);
+        });
+
+        function generateCalendar(month, year, tableBody, dateData) {
+            const firstDay = (new Date(year, month, 1).getDay() + 6) % 7;
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            let day = 1;
+
+            for (let i = 0; i < 6; i++) {
+                const row = document.createElement('tr');
+                for (let j = 0; j < 7; j++) {
+                    const cell = document.createElement('td');
+                    const currentDate = new Date(year, month, day);
+
+                    if (i === 0 && j < firstDay || day > daysInMonth) {
+                        cell.textContent = '';
+                    } else {
+                        const dateString = `${year}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                        const dayInfo = dateData.find(date => date.date === dateString);
+
+                        cell.textContent = day;
+
+                        const price = document.createElement('span');
+                        price.classList.add('price');
+
+                        if (dayInfo?.price) {
+                            price.textContent = `${dayInfo.price} €`;
+                        } else {
+                            price.textContent = '---';
+                        }
+
+                        if (currentDate < new Date()) {
+                            cell.classList.add('past');
+                        } else {
+                            cell.addEventListener('mouseover', () => hoverDate(cell));
+                            cell.appendChild(price);
+                            cell.dataset.date = dateString;
+                            if (dayInfo?.unavailable) {
+                                cell.classList.add('unavailable');
+                            } else if (dayInfo?.price) {
+                                if (dayInfo.price_position === 'low') {
+                                    cell.classList.add('green');
+                                } else if (dayInfo.price_position === 'middle') {
+                                    cell.classList.add('yellow');
+                                } else if (dayInfo.price_position === 'high') {
+                                    cell.classList.add('orange');
+                                }
+                                cell.classList.add('filled');
+                                cell.addEventListener('click', () => selectDate(cell, dateData));
+                            }
+                        }
+
+                        day++;
+                    }
+                    row.appendChild(cell);
+                }
+                tableBody.appendChild(row);
+            }
+        }
+
+        function resetOptions() {
+            document.querySelectorAll('.filled').forEach(cell => {
+                if (cell.classList.contains('unavailable')) {
+                    cell.classList.remove('unavailable');
+                    cell.classList.remove('clear');
+                }
+            });
+        }
+
+        function resetSelection(dateData) {
+            document.querySelectorAll('.selected, .in-range, .hover-range, .hovered').forEach(cell => {
+                cell.classList.remove('selected', 'day_from', 'day_to', 'in-range', 'hover-range', 'hovered');
+            });
+            dayFrom = null;
+            dayTo = null;
+
+            document.querySelectorAll('.filled').forEach(cell => {
+                const cellDate = new Date(cell.dataset.date);
+                const infoDate = dateData.find(date => date.date === cell.dataset.date);
+                if (infoDate?.unavailable) {
+                    cell.classList.add('unavailable');
+                } else {
+                    cell.classList.remove('unavailable');
+                }
+            });
+        }
+
+        function selectDate(cell, dateData) {
+            if (cell.classList.contains('unavailable') || cell.classList.contains('past')) return;
+
+            const selectedDate = new Date(cell.dataset.date);
+            const min_nights = dateData.find(date => date.date === cell.dataset.date).min_nights;
+            if (dayFrom && !dayTo && selectedDate > new Date(dayFrom)) {
+                if (min_nights) {
+                    const blocked = new Date(dayFrom);
+                    blocked.setDate(blocked.getDate() + min_nights);
+                    if (blocked > new Date(cell.dataset.date)) {
+                    } else {
+                        dayTo = cell.dataset.date;
+                        cell.classList.add('selected', 'day_to');
+                        markRange(dayFrom, dayTo, dateData);
+                        resetOptions();
+                    }
+                }
+            } else {
+                resetSelection(dateData);
+                for (let i = 1; i < min_nights + 1; i++) {
+                    const nextDay = new Date(selectedDate);
+                    nextDay.setDate(selectedDate.getDate() + i);
+                    const nextDayCell = document.querySelector(`[data-date="${nextDay.toISOString().split('T')[0]}"]`);
+                    if (nextDayCell) {
+                        nextDayCell.classList.add('unavailable');
+                    }
+                }
+                dayFrom = cell.dataset.date;
+                cell.classList.add('selected', 'day_from');
+            }
+
+            let unavailable = false;
+            document.querySelectorAll('[data-date]').forEach(cell => {
+                const cellDate = new Date(cell.dataset.date);
+                if (cellDate > selectedDate) {
+                    if (!cell.classList.contains('filled') && !dayTo) {
+                        unavailable = true;
+                    }
+                }
+                if (unavailable) {
+                    cell.classList.add('unavailable');
+                }
+            });
+        }
+
+        function markRange(from, to, dateData) {
+            const startDate = new Date(from);
+            const endDate = new Date(to);
+            pricePerPerson = dateData.find(date => date.date === from).price;
+            document.querySelectorAll('[data-date]').forEach(cell => {
+                const cellDate = new Date(cell.dataset.date);
+                if (cellDate > startDate && cellDate < endDate) {
+                    cell.classList.add('in-range');
+                    pricePerPerson += dateData.find(date => date.date === cell.dataset.date).price;
+                }
+            });
+            pricePerPerson += dateData.find(date => date.date === to).price;
+            document.querySelector('.price-person').textContent = `${pricePerPerson} € per person`;
+            document.querySelector('.total').textContent = `Total: ${pricePerPerson * persons} €`;
+            const final_from = new Date(from);
+            final_from.setDate(final_from.getDate() + 1);
+            const final_to = new Date(to);
+            final_to.setDate(final_to.getDate() + 1);
+            document.querySelector('.final_day_from').textContent = `${final_from.toString().split(' ')[0]} ${final_from.getDate()} ${final_from.toString().split(' ')[1]}`;
+            document.querySelector('.final_day_to').textContent = `${final_to.toString().split(' ')[0]} ${final_to.getDate()} ${final_to.toString().split(' ')[1]}`;
+        }
+
+        function hoverDate(cell) {
+            if (!dayFrom || dayTo) return;
+            resetHover();
+            const startDate = new Date(dayFrom);
+            const hoverDate = new Date(cell.dataset.date);
+            if (hoverDate > startDate) {
+                document.querySelectorAll('[data-date]').forEach(cell => {
+                    const cellDate = new Date(cell.dataset.date);
+                    if (cellDate > startDate && cellDate <= hoverDate) {
+                        cell.classList.add('hover-range');
+                    }
+                });
+                cell.classList.add('hovered');
+            }
+        }
+
+        function resetHover() {
+            document.querySelectorAll('.hover-range, .hovered').forEach(cell => {
+                cell.classList.remove('hover-range', 'hovered');
+            });
+        }
+
+        initCalendar();
+    </script>
+
+</body>
+
+</html>
